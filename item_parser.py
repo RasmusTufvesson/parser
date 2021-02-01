@@ -4,7 +4,8 @@ parser_items = {
 "file_end": "└── FILE",
 "indent": "│   ",
 "empty_indent": "    ",
-"newline": "\n"
+"newline": "\n",
+"file_indent": "─┐"
 }
 
 item_holders = [
@@ -13,7 +14,13 @@ item_holders = [
     tuple
 ]
 
-
+"""
+item_holder_names = {
+    dict: "dictionary",
+    list: "list",
+    tuple: "tuple"
+}
+"""
 
 #items = [
 #    str,
@@ -50,7 +57,7 @@ def indentation(number_of_indents: int, ended_indents: dict):
     return ind
 
 def parse(item_holder, indents = 0, ended_indents: dict = {}):
-    global parser_items, item_holders
+    global parser_items, item_holders#, item_holder_names
     #print (item_holders)
     if type(item_holder) not in item_holders:
         raise TypeError(f"{type(item_holder).__name__} not a valid item holder")
@@ -62,16 +69,37 @@ def parse(item_holder, indents = 0, ended_indents: dict = {}):
     for file in item_holder:
         f = find_in_dict(item_holder, file)[0]
         le = len(item_holder)-1
-        if f<le:
-            output += indentation(indents, ended_indents) + parser_items["file_mid"].replace("FILE", file) #parser_items["indent"]*indents
+        if type(item_holder) == dict:
+            if f<le:
+                output += indentation(indents, ended_indents) + parser_items["file_mid"].replace("FILE", file) #parser_items["indent"]*indents
+            else:
+                output += indentation(indents, ended_indents) + parser_items["file_end"].replace("FILE", file) #parser_items["indent"]*indents
+                ended_indents[indents] = False
         else:
-            output += indentation(indents, ended_indents) + parser_items["file_end"].replace("FILE", file) #parser_items["indent"]*indents
-            ended_indents[indents] = False
+            if type(item_holder[num]) in item_holders:
+                if f<le:
+                    output += indentation(indents, ended_indents) + parser_items["file_mid"].replace(" FILE", parser_items["file_indent"]) #parser_items["indent"]*indents
+                else:
+                    output += indentation(indents, ended_indents) + parser_items["file_end"].replace(" FILE", parser_items["file_indent"]) #parser_items["indent"]*indents
+                    ended_indents[indents] = False
+            else:
+                if f<le:
+                    output += indentation(indents, ended_indents) + parser_items["file_mid"].replace("FILE", file)#parser_items["file_indent"]) #parser_items["indent"]*indents
+                else:
+                    output += indentation(indents, ended_indents) + parser_items["file_end"].replace("FILE", file)#parser_items["file_indent"]) #parser_items["indent"]*indents
+                    ended_indents[indents] = False
             #print ("end of indent number", indents)
-        if type(item_holder[file]) in item_holders:
-            if len(item_holder[file]) != 0:
-                ended_indents[indents + 1] = True
-                output += parse(item_holder[file], indents + 1)
+        #print (item_holder)
+        if type(item_holder) == dict:
+            if type(item_holder[file]) in item_holders:
+                if len(item_holder[file]) != 0:
+                    ended_indents[indents + 1] = True
+                    output += parse(item_holder[file], indents + 1)
+        else:
+            if type(item_holder[num]) in item_holders:
+                if len(item_holder[num]) != 0:
+                    ended_indents[indents + 1] = True
+                    output += parse(item_holder[num], indents + 1)
         #if indents == 0:
         if num != le:
             output += parser_items["newline"]
